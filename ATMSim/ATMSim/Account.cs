@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ATMSim
 {
-    internal class Account
+    public class Account
     {
         public int Pin { get; set; }
         public string Name { get; set; }
