@@ -1,4 +1,6 @@
-﻿namespace ATMSim
+﻿using System.Reflection.Metadata;
+
+namespace ATMSim
 {
     internal class Program
     {
@@ -11,21 +13,27 @@
 
     class ATM
     {
-        private decimal balance = 1000.00m;
-        private int pin = 1234;
-        private bool authenticated = false;
+        Dictionary<int, Account> accounts = new Dictionary<int, Account>
+        {
+            {1234, new Account {Pin = 1234, Name = "Alice", Balance = 1500}},
+            {4321, new Account {Pin = 4321, Name = "Bob", Balance = 900}},
+        };
 
         public void Start()
         {
             Console.WriteLine("=== Welcome to the ATM ===");
+            Console.Write("Enter your PIN: ");
+            var pin = int.TryParse(Console.ReadLine(), out int enteredPin);
 
-            Authenticate();
-
-            if (authenticated)
+            if (Authenticate(enteredPin))
             {
+                var userAcc = accounts.Where(x => x.Value.Pin == enteredPin).Select(x => x.Value).First();
+
                 int choice;
                 do
                 {
+
+
                     ShowMenu();
                     Console.Write("Enter your choice: ");
                     choice = int.Parse(Console.ReadLine());
@@ -33,13 +41,13 @@
                     switch (choice)
                     {
                         case 1:
-                            ShowBalance();
+                            ShowBalance(userAcc);
                             break;
                         case 2:
-                            Deposit();
+                            Deposit(userAcc);
                             break;
                         case 3:
-                            Withdraw();
+                            Withdraw(userAcc);
                             break;
                         case 4:
                             Console.WriteLine("Thank you for using the ATM. Goodbye!");
@@ -54,18 +62,17 @@
             }
         }
 
-        private void Authenticate()
+        private bool Authenticate(int pin)
         {
             int attempts = 0;
 
             while (attempts < 3)
             {
-                Console.Write("Enter your PIN: ");
-                if (int.TryParse(Console.ReadLine(), out int enteredPin) && enteredPin == pin)
+                
+                if (pin == accounts.Select(x => x.Value.Pin).First())
                 {
-                    authenticated = true;
                     Console.WriteLine("Authentication successful.\n");
-                    return;
+                    return true;
                 }
                 else
                 {
@@ -74,7 +81,12 @@
                 }
             }
 
-            Console.WriteLine("Too many failed attempts. Exiting...");
+            if (attempts == 3)
+            {
+                Console.WriteLine("Too many failed attempts. Exiting...");
+                return false;
+            }
+            return false;
         }
 
         private void ShowMenu()
@@ -85,18 +97,18 @@
             Console.WriteLine("4. Exit");
         }
 
-        private void ShowBalance()
+        private void ShowBalance(Account acc)
         {
-            Console.WriteLine($"Your current balance is: ${balance}");
+            Console.WriteLine($"Your current balance is: ${acc.Balance}");
         }
 
-        private void Deposit()
+        private void Deposit(Account acc)
         {
             Console.Write("Enter deposit amount: $");
             if (decimal.TryParse(Console.ReadLine(), out decimal amount) && amount > 0)
             {
-                balance += amount;
-                Console.WriteLine($"Deposited ${amount}. New balance is ${balance}");
+                acc.Balance += amount;
+                Console.WriteLine($"Deposited ${amount}. New balance is ${acc.Balance}");
             }
             else
             {
@@ -104,15 +116,15 @@
             }
         }
 
-        private void Withdraw()
+        private void Withdraw(Account acc)
         {
             Console.Write("Enter withdrawal amount: $");
             if (decimal.TryParse(Console.ReadLine(), out decimal amount) && amount > 0)
             {
-                if (amount <= balance)
+                if (amount <= acc.Balance)
                 {
-                    balance -= amount;
-                    Console.WriteLine($"Withdrew ${amount}. New balance is ${balance}");
+                    acc.Balance -= amount;
+                    Console.WriteLine($"Withdrew ${amount}. New balance is ${acc.Balance}");
                 }
                 else
                 {
